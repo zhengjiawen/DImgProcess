@@ -147,11 +147,27 @@ def showColorHist(img):
         plt.xlim([0, 255])
     plt.show()
 
+def imgEqualizeHist(img):
+    '''
+    直接用opencv的equalizeHist方法进行直方图均衡化，增加了对RGB图的逻辑
+    :param img: narray对象，灰度图是二维的,RGB图是三维的
+    :return: 
+    '''
+    dimension = len(img.shape)
+    if dimension == 2:
+        #灰度图直接使用opencv的方法
+        eq = cv.equalizeHist(img)
+    elif dimension == 3:
+        #先转成YUV通道，然后对Y通道进行均衡化，再转回RGB通道
+        img_yuv = cv.cvtColor(img, cv.COLOR_BGR2YUV)
+        img_yuv[:,:,0] = cv.equalizeHist(img[:,:,0])
+        eq = cv.cvtColor(img_yuv, cv.COLOR_YUV2BGR)
+    else:
+        raise(RuntimeError("维度错误,维度为"+str(dimension)))
+    return eq
 
-
-
-img = cv.imread("F:/lena.jpg",0)
-eq = cv.equalizeHist(img)
+img = cv.imread("F:/lena.jpg",1)
+eq = imgEqualizeHist(img)
 
 cv.imshow("Histgram Equalization", np.hstack([img,eq]))
 cv.waitKey(0)
