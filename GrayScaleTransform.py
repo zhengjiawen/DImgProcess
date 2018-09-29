@@ -166,13 +166,69 @@ def imgEqualizeHist(img):
         raise(RuntimeError("维度错误,维度为"+str(dimension)))
     return eq
 
-img = cv.imread("F:/lena.jpg",1)
-eq = imgEqualizeHist(img)
+def imgEqualizeHistByLut(img):
+    '''
+    使用查找表的方式，手动实现直方图均衡化
+    :param img: narray对象，灰度图是二维的,RGB图是三维的
+    :return: 
+    '''
+#    lut = np.zeros(256, dtype = img.dtype)
+    hist, bins = np.histogram(img.flatten(), 256,[0,256])
+    cdf = hist.cumsum()
+    cdf_m = np.ma.masked_equal(cdf,0)  # 除去直方图中的0值
+    cdf_m = (cdf_m - cdf_m.min())*255/(cdf_m.max()-cdf_m.min())#等同于前面介绍的lut[i] = int(255.0 *p[i])公式
+    cdf = np.ma.filled(cdf_m,0).astype('uint8') #将掩模处理掉的元素补为0
+    #lut查表操作，根据表中元素映射灰度值
+    return cv.LUT(img, cdf)
 
-cv.imshow("Histgram Equalization", np.hstack([img,eq]))
+def filterProcess(img, kernel):
+    #自定义卷积操作
+    return cv.filter2D(img, -1, kernel)
+
+def laplaceProcess(img, ksize=1, scale=1, delta=0, borderType=cv.BORDER_DEFAULT):
+    #拉普拉斯算子进行滤波
+    dst = cv.Laplacian(img,-1, ksize=ksize, scale=scale, delta=delta, borderType=borderType)
+    return dst
+
+def sobelProcess(img, dx, dy, ksize=1, scale=1,delta=0, borderType=cv.BORDER_DEFAULT):
+    #sobel算子进行滤波
+    dst = cv.Sobel(img,-1, dx,dy,ksize=ksize, scale=scale, delta=delta, borderType=borderType)
+    return dst
+
+#骨骼增强图像实验代码
+
+sobelXKernel = np.array([[-1,-2,-1],
+                         [0,0,0],
+                         [1,2,1]])
+sobelYKernel = np.array([[-1,0,1],
+                         [-2,0,2],
+                         [-1,0,1]])
+laplaceKernel = np.array([[-1,-1,-1],
+                          [-1,8,-1],
+                          [-1,-1,-1]])
+avgKernel = np.ones((5,5))/25
+
+
+img = cv.imread("F:/testImg/DIP3E_Original_Images_CH03/Fig0343(a)(skeleton_orig).tif",0)
+#laplaceResult = laplaceProcess(img, ksize=3)
+laplaceResult = filterProcess(img, laplaceKernel)
+np.where(laplaceResult>0,laplaceResult,0)
+
+#生成sobel图像
+# sobelResultX = sobelProcess(img,1,0,ksize=3)
+# sobelResultY = sobelProcess(img,0,1,ksize=3)
+sobelResultX = filterProcess(img,sobelXKernel)
+sobelResultY = filterProcess(img,sobelYKernel)
+#sobelResult = np.square(np.power(sobelResultX,2)+np.power(sobelResultY,2))
+sobelResult = np.abs(sobelResultX)+np.abs(sobelResultY)
+
+img_blur = cv.blur(sobelResult,ksize=(5,5))
+#img_blur = filterProcess(sobelResult, avgKernel)
+result = np.multiply(laplaceResult+img,sobelResult)
+
+#cv.imshow("test", np.hstack([img,result+img]))
+cv.imshow("test", result)
 cv.waitKey(0)
-showHist(img)
-showHist(eq)
 
 
 # test = imgGamaProcess(img,10,0.2)
