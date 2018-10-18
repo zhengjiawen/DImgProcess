@@ -75,7 +75,7 @@ def pepperAndSalt(img, snr):
             result[randX, randY]=0
         else:
             result[randX, randY]=255
-    return result
+    return result.astype(np.uint8)
 
 def img_meanFilter(img, size=(3,3)):
     #算术均值滤波器
@@ -304,8 +304,23 @@ def alphaMeanFilterAmendOperator(roi, d):
     tempArray.sort()
     alphaAmendArray = tempArray[int(d/2):int(size-d/2)]
     return np.mean(alphaAmendArray)
+
+def selfAdaptingFilter(roi, currentValue,sigma):
+    '''
+    自适应局部降低噪声滤波器
+    :param roi:
+    :param currentValue: 当前值
+    :param sigma: 噪声方差
+    :return:
+    '''
+    #局部均值
+    m = np.mean(roi)
+    #局部方差
+    var = np.var(roi)
+    return currentValue-(sigma/var)*(currentValue-m)
+
 '''由于前面重复代码过多，这里做个整合，将滤波器都整合到一起'''
-def imgFilter(img, size=3,filterType=const.MAX_FILTER, q=1, d=2):
+def imgFilter(img, size=3,filterType=const.MAX_FILTER, q=1, d=2,varOfNoise=0):
     '''
     滤波器
     :param img: narray对象，灰度图是二维的,RGB图是三维的
@@ -317,17 +332,17 @@ def imgFilter(img, size=3,filterType=const.MAX_FILTER, q=1, d=2):
         raise (RuntimeError("滤波器大小必须为奇数"))
     dimension = len(img.shape)
     if dimension == 2:
-        return imgFilterSingle(img,size, filterType,q,d)
+        return imgFilterSingle(img,size, filterType,q,d,varOfNoise)
     elif dimension == 3:
         r, g, b = cv.split(img)
-        r = imgFilterSingle(r,size, filterType,q, d)
-        g = imgFilterSingle(g,size, filterType,q, d)
-        b = imgFilterSingle(b,size, filterType,q,d )
+        r = imgFilterSingle(r,size, filterType,q, d,varOfNoise)
+        g = imgFilterSingle(g,size, filterType,q, d,varOfNoise)
+        b = imgFilterSingle(b,size, filterType,q,d ,varOfNoise)
         return cv.merge([r, g, b])
     else:
         raise(RuntimeError("维度错误,维度为"+str(dimension)))
 
-def imgFilterSingle(img, size=3,filterType=const.MAX_FILTER, q=1,d=2):
+def imgFilterSingle(img, size=3,filterType=const.MAX_FILTER, q=1,d=2,varOfNoise=0):
     '''
 
     :param img:
@@ -344,7 +359,8 @@ def imgFilterSingle(img, size=3,filterType=const.MAX_FILTER, q=1,d=2):
         const.IHMEANS_FILTER : iHMeanOperator,
         const.MINPOINT_FILTER: minpointFilterOperator,
         const.MEDIAN_FILTER: medianFilterOperator,
-        const.ALPHA_MEAN_FILTER_AMEND : alphaMeanFilterAmendOperator
+        const.ALPHA_MEAN_FILTER_AMEND : alphaMeanFilterAmendOperator,
+        const.SELF_ADAPTING_FILTER: selfAdaptingFilter
     }
     method = typeToMethod.get(filterType)
     length = int(size/2)
@@ -358,24 +374,83 @@ def imgFilterSingle(img, size=3,filterType=const.MAX_FILTER, q=1,d=2):
             elif const.ALPHA_MEAN_FILTER_AMEND == filterType:
                 resultImg[i - length, j - length] = method(
                     tempImg[i - length:i + length + 1, j - length:j + length + 1],d)
+            elif const.SELF_ADAPTING_FILTER == filterType:
+                resultImg[i - length, j - length] = method(
+                    tempImg[i - length:i + length + 1, j - length:j + length + 1],tempImg[i,j],varOfNoise)
             else:
                 resultImg[i-length, j-length] = method(tempImg[i-length:i+length+1, j-length:j+length+1])
     return resultImg.astype(np.uint8)
 
+def adaptive_median_filter(img,maxSize=3):
+    '''
+    自适应中值滤波器
+    :param img: narray对象，灰度图是二维的,RGB图是三维的
+    :param maxSize: 滤波器最大大小
+    :return:
+    '''
+    dimension = len(img.shape)
+    if dimension == 2:
+        return adaptive_median_filter_single(img,maxSize)
+    elif dimension == 3:
+        r, g, b = cv.split(img)
+        r = adaptive_median_filter_single(r,maxSize)
+        g = adaptive_median_filter_single(g,maxSize)
+        b = adaptive_median_filter_single(b,maxSize)
+        return cv.merge([r, g, b])
+    else:
+        raise(RuntimeError("维度错误,维度为"+str(dimension)))
+def adaptive_median_filter_single(img,maxSize=3):
+    '''
+    自适应中值滤波器
+    :param img:
+    :return:
+    '''
+
+    maxLength = int(maxSize / 2)
+    resultImg = np.zeros(img.shape)
+#    print(resultImg.shape)
+    tempImg = cv.copyMakeBorder(img, maxLength, maxLength, maxLength, maxLength, cv.BORDER_DEFAULT)
+#    print(tempImg.shape)
+    for i in range(maxLength, tempImg.shape[0] - maxLength):
+        for j in range(maxLength, tempImg.shape[1] - maxLength):
+            size = 3
+            while size <= maxSize:
+                length = int(size/2)
+                roiImg = tempImg[i - length:i + length + 1, j - length:j + length + 1]
+                zMin = int(np.min(roiImg))
+                zMax = int(np.max(roiImg))
+                zMed = int(medianFilterOperator(roiImg))
+                zXY = int(tempImg[i,j])
+
+                if zMed-zMin >0 and zMed-zMax < 0 :
+                    if zXY - zMin >0 and zXY - zMax < 0:
+                        resultImg[i - maxLength, j - maxLength] = zXY
+                        break
+                    else:
+                        resultImg[i - maxLength, j - maxLength] = zMed
+                        break
+                else:
+                    size = size + 2
+                if size > maxSize :
+                    resultImg[i - maxLength, j - maxLength] = zMed
+    return resultImg.astype(np.uint8)
+
 
 path = 'C:/Users/i349006/PycharmProjects/DIP3E_CH05_Original_Images/'
-fileName = 'Fig0512(b)(ckt-uniform-plus-saltpepr-prob-pt1).tif'
+fileName = 'Fig0514(a)(ckt_saltpep_prob_pt25).tif'
 img = cv.imread(path+fileName, 0)
 
 #resultImg = madianFilter(img, size=5)
-resultImg = imgFilter(img,size=5, filterType=const.ALPHA_MEAN_FILTER_AMEND, d=5)
-#resultImg = imgFilter(img,3, const.IHMEANS_FILTER,q=-1.5)
-#resultImg = madianFilter(resultImg,3)
-
+#resultImg = imgFilter(img,size=7, filterType=const.SELF_ADAPTING_FILTER, d=5,varOfNoise=500)
+#resultImg = imgFilter(img,7, const.MEDIAN_FILTER)
+resultImg2 = madianFilter(img,7)
+resultImg = adaptive_median_filter(img,7)
 cv.namedWindow('test')
 #cv.imshow('test', resultImg)
-cv.imshow('test', np.hstack([img,resultImg]))
+cv.imshow('test', np.hstack([img,resultImg2,resultImg]))
 cv.waitKey(0)
 
 cv.destroyAllWindows()
+
+
 
