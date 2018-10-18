@@ -15,4 +15,5 @@ const.MINPOINT_FILTER = 5
 const.MEDIAN_FILTER = 6
 #修正的阿尔法均值滤波器
 const.ALPHA_MEAN_FILTER_AMEND = 7
-
+#自适应局部降低噪声滤波器
+const.SELF_ADAPTING_FILTER = 8
