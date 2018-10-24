@@ -401,8 +401,9 @@ def adaptive_median_filter(img,maxSize=3):
         raise(RuntimeError("维度错误,维度为"+str(dimension)))
 def adaptive_median_filter_single(img,maxSize=3):
     '''
-    自适应中值滤波器
+    自适应中值滤波器,单通道
     :param img:
+    :param maxSize: 滤波器最大大小
     :return:
     '''
 
