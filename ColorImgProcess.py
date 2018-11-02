@@ -1,6 +1,8 @@
 #处理彩色图像
 import cv2 as cv
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 path = 'C:/Users/i349006/PycharmProjects/DIP3E_Original_Images_CH06/'
 rgb_scale = 255
@@ -261,6 +263,54 @@ def testImgEqulizeHist():
     cv.imshow('test', result)
     cv.waitKey(0)
 
-testImgEqulizeHist()
 
+def testSplitHSIImg():
+    fileName = 'Fig0642(a)(jupiter_moon_original).tif'
+
+    img = cv.imread(path + fileName, 1)
+    img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+    h = img_hsv[:, :, 0]
+    s = img_hsv[:, :, 1]
+    v = img_hsv[:, :, 2]
+
+#    print(type(s))
+    plt.figure("jupiter")
+    arr = s.flatten()
+    n, bins, patches = plt.hist(arr, bins=256, normed=1, facecolor = 'green', alpha = 0.75)
+    plt.show()
+    thresholdS = 100
+#    print(thresholdS)
+    retval, resultS = cv.threshold(s,thresholdS, 255.0, cv.THRESH_BINARY)
+    result = h*resultS
+#    resultS.astype(np.uint8)
+
+    cv.namedWindow('test')
+    cv.imshow('test', result)
+    #    cv.imshow('test', np.hstack([h,s,v]))
+    cv.waitKey(0)
+
+
+def testNoisyColorImag():
+    fileNameR = "Fig0648(a)(lenna-noise-R-gauss-mean0-var800).tif"
+    fileNameG = "Fig0648(b)(lenna-noise-G-gauss-mean0-var800).tif"
+    fileNameB = "Fig0648(c)(lenna-noise-B-gauss-mean0-var800).tif"
+
+    imgR = cv.imread(path + fileNameR, 0)
+    imgG = cv.imread(path + fileNameG, 0)
+    imgB = cv.imread(path + fileNameB, 0)
+
+    print("typeR:"+str(type(imgR))+"  size"+str(imgR.size))
+    print("typeG:"+str(type(imgG))+"  size"+str(imgG.size))
+    print("typeB:"+str(type(imgB))+"  size"+str(imgB.size))
+    img = cv.merge([imgB, imgG, imgR])
+
+    result = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+    cv.namedWindow('test')
+#    cv.imshow('test', img)
+    #    cv.imshow('test', np.hstack([h,s,v]))
+    cv.imshow('test', np.hstack([result[:,:,0],result[:,:,1],result[:,:,2]]))
+
+    cv.waitKey(0)
+
+testNoisyColorImag()
 
