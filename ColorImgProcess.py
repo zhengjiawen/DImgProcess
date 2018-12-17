@@ -312,5 +312,6 @@ def testNoisyColorImag():
 
     cv.waitKey(0)
 
-testNoisyColorImag()
+#testNoisyColorImag()
+
 
