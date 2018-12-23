@@ -44,13 +44,13 @@ def testDilate():
     cv.waitKey(0)
     cv.destroyAllWindows()
 
-def openOperation(img):
+def openOperation(img, size = (3,3)):
     '''
     开操作
     :param img:
     :return:
     '''
-    kernel = cv.getStructuringElement(cv.MORPH_RECT, (3,3))
+    kernel = cv.getStructuringElement(cv.MORPH_RECT, size)
     erodeImag = cv.erode(img, kernel)
     openImag = cv.dilate(erodeImag, kernel)
 
@@ -116,6 +116,7 @@ def testSimpleEdgeDetection():
 def twoPass(img):
     '''
     Two-pass法提取连通分量
+    Twopass还有问题！！！
     :param img:
     :return:
     '''
@@ -277,15 +278,51 @@ def findNeighbors(img, i, j):
     return m, mEnd, n, nEnd
 
 
-a = np.array([
-    [0,0,255,0,0,255,0],
-    [255,255,255,0,255,255,255],
-    [0,0,255,0,0,255,0],
-    [0,255,255,0,255,255,0]
+path2 = 'E:/lesson/DIP3E_Original_Images_CH09/'
 
-])
+def testTopHat():
+    '''
+    顶帽操作
+    :return:
+    '''
+    name = 'Fig0940(a)(rice_image_with_intensity_gradient).jpg'
+    img = cv.imread(path2+name, 0)
+    ret, thImg = cv.threshold(img, 150, 255, cv.THRESH_OTSU)
 
-print(seedFilling(a))
+    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (80,80))
+    erodeImag = cv.erode(img, kernel)
+    openImg = cv.dilate(erodeImag, kernel)
+
+    topHatImg = img - openImg
+    ret, topHatImg = cv.threshold(topHatImg, 150, 255, cv.THRESH_OTSU)
+    cv.namedWindow('topHat')
+    cv.imshow('topHat', np.hstack([img, thImg,topHatImg]))
+    cv.waitKey(0)
+    cv.destroyAllWindows()
+
+testTopHat()
+# name = 'Fig0940(a)(rice_image_with_intensity_gradient).jpg'
+# img = cv.imread(path2+name, 0)
+# #ret, thImg = cv.threshold(img, 150, 255, cv.THRESH_OTSU)
+#
+# kernel = cv.getStructuringElement(cv.MORPH_RECT, (80,80))
+# # kernel = np.ones((5,5), np.uint8)
+# dst = cv.morphologyEx(img, cv.MORPH_TOPHAT, kernel)
+# ret, dst = cv.threshold(dst, 150, 255, cv.THRESH_OTSU)
+# cv.namedWindow('topHat')
+# cv.imshow('topHat', dst)
+# cv.waitKey(0)
+# cv.destroyAllWindows()
+
+# a = np.array([
+#     [0,0,255,0,0,255,0],
+#     [255,255,255,0,255,255,255],
+#     [0,0,255,0,0,255,0],
+#     [0,255,255,0,255,255,0]
+#
+# ])
+#
+# print(seedFilling(a))
 
 # b = []
 # print(len(b))

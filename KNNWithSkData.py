@@ -121,10 +121,11 @@ def LDA(dataset, dataLabel, targetDim):
         meanClassify = np.mean(Xi, axis=0)
         Sw = Sw + np.dot((Xi - meanClassify).T, (Xi - meanClassify))
         Sb = Sb + n*np.dot((meanClassify - meanTotal).T, (meanClassify-meanTotal))
-    Sw1 = (Sw+Sw.T)/2
-    Sw1 = np.linalg.inv(Sw1)
-    eigenValue, eigenVector = np.linalg.eig(Sw1*Sb)
-    idx = np.argsort(- eigenValue.real)
+    Sw1 = np.linalg.inv(Sw)*Sb
+    Sw1 = (Sw1+Sw1.T)/2
+    eigenValue, eigenVector = np.linalg.eig(Sw1)
+#    idx = np.argsort(- eigenValue.real)
+    idx = np.argsort(- eigenValue)
     eigenValue, eigenVector = eigenValue[idx], eigenVector[idx]
     eigenValue = np.array(eigenValue[0:targetDim].real, dtype=np.float32, copy=True)
     eigenVector = np.array(eigenVector[0:, 0:targetDim].real, dtype=np.float32, copy=True)
