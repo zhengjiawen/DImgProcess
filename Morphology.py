@@ -4,7 +4,6 @@ import cv2 as cv
 import matplotlib.pyplot as plt
 import scipy.ndimage as ndi
 from skimage import measure,color
-import sys
 
 
 path = 'C:/Users/i349006/PycharmProjects/DIP3E_Original_Images_CH09/'
