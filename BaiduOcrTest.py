@@ -22,10 +22,29 @@ def get_file_content(filePath):
 
 
 client = AipOcr(APP_ID, API_KEY, SECRET_KEY)
-img = get_file_content(cellPath+imgName)
-res = client.basicGeneral(img)
-for item in res.get('words_result'):
-    print(item['words'])
+# img = get_file_content(cellPath+imgName)
+# img = get_file_content('D:/Image/rectifyTable.jpg')
+# result = client.tableRecognitionAsync(img)
+# print(result)
+# requestIds = result.get('result')
+# for item in requestIds:
+#     requestId = item['request_id']
+#     print(requestId)
+#     client.getTableRecognitionResult(requestId)
+#     options = {}
+#     options["result_type"] = "excel"
+#     res = client.getTableRecognitionResult(requestId, options)
+#     print(res)
+#
+client.getTableRecognitionResult('15582892_909314')
+options = {}
+options["result_type"] = "excel"
+res = client.getTableRecognitionResult('15582892_909314', options)
+print(res)
+
+# res = client.basicGeneral(img)
+# for item in res.get('words_result'):
+#     print(item['words'])
 # fileList = os.listdir(cellPath)
 # fileList.sort()
 # print(len(fileList))
